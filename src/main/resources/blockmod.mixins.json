@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "package": "dev.denimred.blockmod.mixin",
+  "compatibilityLevel": "JAVA_16",
+  "mixins": [
+    "ServerPlayerMixin"
+  ],
+  "client": [
+    "FontMixin",
+    "PlayerInfoMixin",
+    "SubStringSourceMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "minVersion": "0.8.5"
+}

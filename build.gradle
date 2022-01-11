@@ -1,0 +1,131 @@
+plugins {
+    id 'dev.architectury.loom' version '0.10.0-SNAPSHOT'
+    id 'maven-publish'
+}
+
+sourceCompatibility = targetCompatibility = JavaVersion.VERSION_17
+
+archivesBaseName = mod_id
+version = mod_version
+group = maven_group
+
+loom {
+    silentMojangMappingsLicense()
+
+    forge {
+        mixinConfigs = ["${mod_id}.mixins.json"]
+        dataGen {
+            mod mod_id
+        }
+    }
+
+    launches {
+        data {
+            arg "--existing", file("src/main/resources").absolutePath
+        }
+    }
+
+    runs {
+        client {
+            runDir "runs/client"
+            programArgs "--width", "1280", "--height", "720"
+        }
+        clientAlt {
+            inherit client
+            runDir "runs/clientAlt"
+            programArgs "--username", "Alt"
+        }
+        if (project.hasProperty("mc_username")) {
+            clientUser {
+                inherit client
+                runDir "runs/clientUser"
+                programArgs "--username", project.getProperty("mc_username")
+                if (project.hasProperty("mc_uuid")) {
+                    programArgs "--uuid", project.getProperty("mc_uuid")
+                }
+                if (project.hasProperty("mc_accessToken")) {
+                    programArgs "--accessToken", project.getProperty("mc_accessToken")
+                }
+            }
+        }
+        server {
+            runDir "runs/server"
+        }
+        data {
+            runDir "runs/data"
+        }
+    }
+}
+
+repositories {
+    maven {
+        name "ParchmentMC"
+        url "https://maven.parchmentmc.net/"
+        content {
+            includeGroup "org.parchmentmc.data"
+        }
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    forge "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    mappings loom.layered {
+        officialMojangMappings()
+        parchment("org.parchmentmc.data:parchment-${minecraft_version}:${parchment_version}@zip")
+    }
+}
+
+processResources {
+    filesMatching("META-INF/mods.toml") {
+        expand project.properties
+    }
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+    options.release = 17
+}
+
+java {
+    withSourcesJar()
+}
+
+jar {
+    exclude ".cache/**", "**/*.bbmodel", "**/*.pdn"
+
+    manifest {
+        attributes([
+                "Specification-Title"     : mod_id,
+                "Specification-Vendor"    : mod_author,
+                "Specification-Version"   : archiveVersion,
+                "Implementation-Title"    : mod_name,
+                "Implementation-Vendor"   : mod_author,
+                "Implementation-Version"  : archiveVersion,
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
+
+// configure the maven publication
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            // add all the jars that should be included when publishing to maven
+            artifact(remapJar) {
+                builtBy remapJar
+            }
+            artifact(sourcesJar) {
+                builtBy remapSourcesJar
+            }
+        }
+    }
+
+    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
+    repositories {
+        // Add repositories to publish to here.
+        // Notice: This block does NOT have the same function as the block in the top level.
+        // The repositories here will be used for publishing your artifact, not for
+        // retrieving dependencies.
+    }
+}
